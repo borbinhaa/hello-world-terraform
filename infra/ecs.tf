@@ -71,7 +71,7 @@ resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv4" {
 }
 
 resource "aws_ecs_service" "ecs-service" {
-  name                 = "${var.project_name}-service"
+  name                 = "${var.project_name}-${var.environment}-service"
   cluster              = aws_ecs_cluster.ecs-cluster.id
   task_definition      = "${aws_ecs_task_definition.ecs-task.family}:${max(aws_ecs_task_definition.ecs-task.revision, data.aws_ecs_task_definition.task_definion.revision)}"
   launch_type          = "FARGATE"
