@@ -19,6 +19,11 @@ public class TesteController {
 
     @GetMapping("teste")
     public ResponseEntity<String> teste() {
-        return ResponseEntity.ok("hello-world");
+        return ResponseEntity.ok("teste");
+    }
+
+    @GetMapping("teste-2")
+    public ResponseEntity<String> teste2() {
+        return ResponseEntity.ok("teste2");
     }
 }
