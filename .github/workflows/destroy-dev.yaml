@@ -2,7 +2,7 @@ name: Destroy DEV environment
 
 on:
   workflow_dispatch:
-    branch:
+    branches:
       - develop
 
 env:
