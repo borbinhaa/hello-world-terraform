@@ -17,27 +17,45 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Check if directory has changed
+        id: check_changes
+        env:
+          DIRECTORY_CHANGE: "infra-develop"
+        run: |
+          git fetch origin ${{ github.event.before }} --depth=1
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^${{  env.DIRECTORY_CHANGE  }}/'; then
+            echo "Directory changed"
+            echo "changed=true" >> $GITHUB_ENV
+          else
+            echo "No changes in directory"
+            echo "changed=false" >> $GITHUB_ENV
+          fi
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
+        if: env.changed == 'true'
 
       - name: Initialise project and view terraform plan
         run: |
           cd infra-develop
           terraform init
+        if: env.changed == 'true'
 
       - name: Plan
         run: |
           cd infra-develop
           terraform plan -var="access_key=${{ env.AWS_ACCESS_KEY_ID }}" -var="secret_key=${{ env.AWS_SECRET_ACCESS_KEY }}" -var="region=${{ env.AWS_REGION }}"
+        if: env.changed == 'true'
 
       - name: Deploy
         run: |
           cd infra-develop
           terraform apply -auto-approve -var="access_key=${{ env.AWS_ACCESS_KEY_ID }}" -var="secret_key=${{ env.AWS_SECRET_ACCESS_KEY }}" -var="region=${{ env.AWS_REGION }}"
+        if: env.changed == 'true'
 
   deploy-ecs:
     name: Deploy ECS
