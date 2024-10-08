@@ -14,7 +14,7 @@ provider "aws" {
 }
 
 resource "aws_ecr_repository" "repository" {
-  name                 = "${var.project_name}-${var.environment}"
+  name                 = "${var.project_name}-${var.environment}-2"
   image_tag_mutability = "MUTABLE"
   force_delete         = true
 
