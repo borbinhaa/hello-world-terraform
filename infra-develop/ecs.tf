@@ -34,7 +34,7 @@ resource "aws_ecs_task_definition" "ecs-task" {
   network_mode             = "awsvpc"
   cpu                      = "256"
   memory                   = "512"
-  container_definitions    = templatefile("ecs/container.json", {
+  container_definitions = templatefile("ecs/container.json", {
     container_name = "${var.project_name}-${var.environment}"
     repository_url = aws_ecr_repository.repository.repository_url
     image_tag      = var.image_tag
