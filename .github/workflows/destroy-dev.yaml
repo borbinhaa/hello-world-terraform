@@ -2,6 +2,8 @@ name: Destroy DEV environment
 
 on:
   workflow_dispatch:
+    branch:
+      - develop
 
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
