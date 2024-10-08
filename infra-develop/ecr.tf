@@ -1,4 +1,6 @@
 terraform {
+  required_version = "1.9.7"
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -14,7 +16,7 @@ provider "aws" {
 }
 
 resource "aws_ecr_repository" "repository" {
-  name                 = "${var.project_name}-${var.environment}-2"
+  name                 = "${var.project_name}-${var.environment}"
   image_tag_mutability = "MUTABLE"
   force_delete         = true
 

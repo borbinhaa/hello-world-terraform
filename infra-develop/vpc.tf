@@ -16,7 +16,7 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-public-subnet-${count.index + 1}"
+    Name = "${var.project_name}-${var.environment}-test-public-subnet-${count.index + 1}"
   }
 }
 
