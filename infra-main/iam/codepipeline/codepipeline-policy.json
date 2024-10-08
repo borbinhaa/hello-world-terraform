@@ -1,0 +1,42 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "codebuild:*",
+      "Resource": [
+        "arn:aws:codebuild:${region}:${account_id}:project/${codebuild_project_name}"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "codestar-connections:UseConnection"
+      ],
+      "Resource": "${codestar_connection_arn}"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "cloudwatch:*",
+      "Resource": [
+        "arn:aws:codebuild:${region}:${account_id}:project/${codebuild_project_name}"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": "s3:*",
+      "Resource": [
+        "${s3_bucket_arn}/*",
+        "${s3_bucket_arn}"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ecs:*",
+        "iam:PassRole"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
