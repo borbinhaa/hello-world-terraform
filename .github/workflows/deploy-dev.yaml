@@ -67,6 +67,7 @@ jobs:
       - name: Save Terraform state
         if: success()
         run: |
+          rm -rf ./terraform_cache
           mkdir -p ./terraform_cache
           cp ./infra-develop/terraform.tfstate ./terraform_cache/terraform.tfstate
 
