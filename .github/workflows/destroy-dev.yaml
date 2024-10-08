@@ -52,3 +52,9 @@ jobs:
           cd infra-develop
           terraform init
           terraform destroy -auto-approve -var="access_key=${{ env.AWS_ACCESS_KEY_ID }}" -var="secret_key=${{ env.AWS_SECRET_ACCESS_KEY }}" -var="region=${{ env.AWS_REGION }}"
+
+      - name: Save Terraform state
+        if: success()
+        run: |
+          mkdir -p ./terraform_cache
+          cp ./infra-develop/terraform.tfstate ./terraform_cache/terraform.tfstate
