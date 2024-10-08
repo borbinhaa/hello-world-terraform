@@ -52,8 +52,7 @@ data "aws_ecs_task_definition" "task_definion" {
 resource "aws_security_group" "security_group" {
   name        = "${var.project_name}-${var.environment}-sg"
   description = "Allow Http in port 8080"
-  vpc_id      = "vpc-05a45489d3d321366"
-  #  vpc_id      = aws_vpc.main.id # TODO - Automatizar criacao de VPC
+  vpc_id      = aws_vpc.vpc.id
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_tcp_ipv4" {
@@ -80,12 +79,7 @@ resource "aws_ecs_service" "ecs-service" {
   force_new_deployment = true
 
   network_configuration {
-    #    TODO - ALterar
-
-    subnets = [
-      "subnet-093c8d0ddc864c85d", "subnet-0b7ef9c9cbf4e8093", "subnet-0fe1c760fc52c942f", "subnet-0a486c226ecdddc10",
-      "subnet-0fb5d3faf5bed0dc7", "subnet-0e61cdbe5a0426885"
-    ]
+    subnets          = aws_subnet.public.*.id
     assign_public_ip = true
     security_groups  = [aws_security_group.security_group.id]
   }
