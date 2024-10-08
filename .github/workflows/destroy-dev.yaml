@@ -1,0 +1,39 @@
+name: Destroy DEV environment
+
+on:
+  workflow_dispatch:
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+
+jobs:
+  destroy-terraform:
+    name: Destroy terraform
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Cache Terraform state
+        id: cache-terraform
+        uses: actions/cache@v3
+        with:
+          path: ./terraform_cache
+          key: ${{ runner.os }}-terraform-${{ hashFiles('**/*.tf') }}
+          restore-keys: |
+            ${{ runner.os }}-terraform-
+
+      - name: Restore cached state
+        run: |
+          if [ -d "./terraform_cache" ]; then
+            cp ./terraform_cache/terraform.tfstate ./infra-develop/terraform.tfstate || echo "No previous state found"
+          fi
+
+      - name: Destroy all
+        run : |
+          cd infra-deploy
+          terraform destroy -auto-approve -var="access_key=${{ env.AWS_ACCESS_KEY_ID }}" -var="secret_key=${{ env.AWS_SECRET_ACCESS_KEY }}" -var="region=${{ env.AWS_REGION }}"
+          rm -rf ./terraform_cache
