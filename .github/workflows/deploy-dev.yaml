@@ -35,9 +35,9 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ./terraform_cache
-          key: ${{ runner.os }}-terraform-${{ hashFiles('**/*.tf') }}
+          key: cache-terraform-${{ hashFiles('**/*.tf') }}
           restore-keys: |
-            ${{ runner.os }}-terraform-
+            cache-terraform-
 
       - name: Restore cached state
         run: |
