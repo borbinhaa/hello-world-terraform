@@ -1,23 +1,90 @@
 name: Deploy DEV environment
+
 on:
   push:
     branches:
       - develop
 
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+
 jobs:
-  Build:
-    name: Deploy
+  deploy-terraform:
+    name: Deploy Terraform
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.9.7
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v2
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Cache Terraform state
+        id: cache-terraform
+        uses: actions/cache@v3
+        with:
+          path: ./terraform_cache
+          key: cache-terraform-${{ hashFiles('**/*.tf') }}
+          restore-keys: |
+            cache-terraform-
+
+      - name: Restore cached state
+        run: |
+          if [ -d "./terraform_cache" ]; then
+            cp ./terraform_cache/terraform.tfstate ./infra-develop/terraform.tfstate || echo "No previous state found"
+          fi
+
+      - name: Initialise project and view terraform plan
+        run: |
+          cd infra-develop
+          terraform init
+
+      - name: Validate
+        run: |
+          cd infra-develop
+          terraform validate
+
+      - name: Plan
+        run: |
+          cd infra-develop
+          terraform plan -var="access_key=${{ env.AWS_ACCESS_KEY_ID }}" -var="secret_key=${{ env.AWS_SECRET_ACCESS_KEY }}" -var="region=${{ env.AWS_REGION }}"
+
+      - name: Deploy
+        run: |
+          cd infra-develop
+          terraform apply -auto-approve -var="access_key=${{ env.AWS_ACCESS_KEY_ID }}" -var="secret_key=${{ env.AWS_SECRET_ACCESS_KEY }}" -var="region=${{ env.AWS_REGION }}"
+
+      - name: Save Terraform state
+        if: success()
+        run: |
+          mkdir -p ./terraform_cache
+          cp ./infra-develop/terraform.tfstate ./terraform_cache/terraform.tfstate
+
+  deploy-ecs:
+    name: Deploy ECS
+    runs-on: ubuntu-latest
+    needs: deploy-terraform
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
         id: login-ecr
