@@ -37,9 +37,9 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ./terraform_cache
-          key: cache-terraform
+          key: cache-terraform-dev
           restore-keys: |
-            cache-terraform
+            cache-terraform-dev
 
       - name: Restore cached state
         run: |
