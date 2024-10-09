@@ -30,14 +30,14 @@ jobs:
           aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Cache Terraform state
-        id: cache-terraform
+      - name: Create Cache Terraform state
+        id: create-cache-terraform-state
         uses: actions/cache@v3
         with:
           path: ./terraform_cache
-          key: cache-terraform-${{ hashFiles('**/*.tf') }}
+          key: cache-terraform-dev
           restore-keys: |
-            cache-terraform-
+            cache-terraform-dev
 
       - name: Restore cached state
         run: |
