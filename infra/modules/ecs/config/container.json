@@ -1,6 +1,6 @@
 [
   {
-    "name": "${container_name}-container",
+    "name": "${container_name}",
     "image": "${repository_url}:${image_tag}",
     "essential": true,
     "logConfiguration": {
@@ -13,8 +13,8 @@
     },
     "portMappings": [
       {
-        "containerPort": 8080,
-        "hostPort": 8080
+        "containerPort": ${container_port},
+        "hostPort": ${container_port}
       }
     ],
     "cpu": 256,

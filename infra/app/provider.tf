@@ -14,13 +14,3 @@ provider "aws" {
   secret_key = var.secret_key
   region     = var.region
 }
-
-resource "aws_ecr_repository" "repository" {
-  name                 = "${var.project_name}-${var.environment}"
-  image_tag_mutability = "MUTABLE"
-  force_delete         = true
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-}

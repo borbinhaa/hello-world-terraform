@@ -32,29 +32,29 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
 
-      - name: Create Cache Terraform state
-        id: create-cache-terraform-state
+      - name: Cache Terraform state
+        id: cache-terraform
         uses: actions/cache@v3
         with:
           path: ./terraform_cache
-          key: cache-terraform-dev
+          key: terraform-state-dev
           restore-keys: |
-            cache-terraform-dev
+            terraform-state-
 
       - name: Restore cached state
         run: |
           if [ -d "./terraform_cache" ]; then
-            cp ./terraform_cache/terraform.tfstate ./infra-develop/terraform.tfstate || echo "No previous state found"
+            cp ./terraform_cache/terraform.tfstate ./infra/app/terraform.tfstate || echo "No previous state found"
           fi
 
       - name: Destroy all
         run : |
-          cd infra-develop
+          cd infra/app
           terraform init
-          terraform destroy -auto-approve -var="access_key=${{ env.AWS_ACCESS_KEY_ID }}" -var="secret_key=${{ env.AWS_SECRET_ACCESS_KEY }}" -var="region=${{ env.AWS_REGION }}"
+          terraform destroy --var-file="dev/terraform.tfvars" --var-file="dev/terraform.tfvars" -auto-approve -var="access_key=${{ env.AWS_ACCESS_KEY_ID }}" -var="secret_key=${{ env.AWS_SECRET_ACCESS_KEY }}" -var="region=${{ env.AWS_REGION }}"
 
       - name: Save Terraform state
         if: success()
         run: |
           mkdir -p ./terraform_cache
-          cp ./infra-develop/terraform.tfstate ./terraform_cache/terraform.tfstate
+          cp ./infra/app/terraform.tfstate ./terraform_cache/terraform.tfstate

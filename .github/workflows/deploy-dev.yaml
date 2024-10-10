@@ -30,46 +30,46 @@ jobs:
           aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Create Cache Terraform state
-        id: create-cache-terraform-state
+      - name: Cache Terraform state
+        id: cache-terraform
         uses: actions/cache@v3
         with:
           path: ./terraform_cache
-          key: cache-terraform-dev
+          key: terraform-state-dev
           restore-keys: |
-            cache-terraform-dev
+            terraform-state-
 
       - name: Restore cached state
         run: |
           if [ -d "./terraform_cache" ]; then
-            cp ./terraform_cache/terraform.tfstate ./infra-develop/terraform.tfstate || echo "No previous state found"
+            cp ./terraform_cache/terraform.tfstate ./infra/app/terraform.tfstate || echo "No previous state found"
           fi
 
       - name: Initialise project and view terraform plan
         run: |
-          cd infra-develop
+          cd infra/app
           terraform init
 
       - name: Validate
         run: |
-          cd infra-develop
+          cd infra/app
           terraform validate
 
       - name: Plan
         run: |
-          cd infra-develop
-          terraform plan -var="access_key=${{ env.AWS_ACCESS_KEY_ID }}" -var="secret_key=${{ env.AWS_SECRET_ACCESS_KEY }}" -var="region=${{ env.AWS_REGION }}"
+          cd infra/app
+          terraform plan --var-file="dev/terraform.tfvars" -var="access_key=${{ env.AWS_ACCESS_KEY_ID }}" -var="secret_key=${{ env.AWS_SECRET_ACCESS_KEY }}" -var="region=${{ env.AWS_REGION }}"
 
       - name: Deploy
         run: |
-          cd infra-develop
-          terraform apply -auto-approve -var="access_key=${{ env.AWS_ACCESS_KEY_ID }}" -var="secret_key=${{ env.AWS_SECRET_ACCESS_KEY }}" -var="region=${{ env.AWS_REGION }}"
+          cd infra/app
+          terraform apply --var-file="dev/terraform.tfvars" -auto-approve -var="access_key=${{ env.AWS_ACCESS_KEY_ID }}" -var="secret_key=${{ env.AWS_SECRET_ACCESS_KEY }}" -var="region=${{ env.AWS_REGION }}"
 
       - name: Save Terraform state
         if: success()
         run: |
           mkdir -p ./terraform_cache
-          cp ./infra-develop/terraform.tfstate ./terraform_cache/terraform.tfstate
+          cp ./infra/app/terraform.tfstate ./terraform_cache/terraform.tfstate
 
   deploy-ecs:
     name: Deploy ECS
