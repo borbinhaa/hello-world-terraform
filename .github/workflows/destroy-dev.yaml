@@ -9,6 +9,7 @@ env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_REGION: ${{ secrets.AWS_REGION }}
+  IMAGE_TAG: ${{ secrets.IMAGE_TAG }}
 
 jobs:
   destroy-terraform:
@@ -24,13 +25,16 @@ jobs:
         with:
           terraform_version: 1.9.7
 
+      - name: Extract repository name
+        id: extract-repo-name
+        run: echo "REPO_NAME=${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}" >> $GITHUB_ENV
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-
 
       - name: Cache Terraform state
         id: cache-terraform
@@ -51,7 +55,7 @@ jobs:
         run : |
           cd infra/app
           terraform init
-          terraform destroy --var-file="dev/terraform.tfvars" --var-file="dev/terraform.tfvars" -auto-approve -var="access_key=${{ env.AWS_ACCESS_KEY_ID }}" -var="secret_key=${{ env.AWS_SECRET_ACCESS_KEY }}" -var="region=${{ env.AWS_REGION }}"
+          terraform destroy --var-file="dev/terraform.tfvars" --var-file="dev/terraform.tfvars" -auto-approve -var="access_key=${{ env.AWS_ACCESS_KEY_ID }}" -var="secret_key=${{ env.AWS_SECRET_ACCESS_KEY }}" -var="region=${{ env.AWS_REGION }}" -var="image_tag=${{  env.IMAGE_TAG  }}" -var="app_name=${{  env.REPO_NAME  }}"
 
       - name: Save Terraform state
         if: success()
