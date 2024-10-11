@@ -91,3 +91,4 @@ terraform destroy -var-file="dev/terraform.tfvars" -auto-approve
 - Deploy the service in **private subnets** in AWS
 - Use a **Load Balancer** with ECS
 - Implement **Autoscaling** for the ECS cluster
+- Do the docker login from the buildspec to avoid 429
