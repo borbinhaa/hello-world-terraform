@@ -1,6 +1,7 @@
+environment         = "prod"
+
 app_name            = "hello-world"
 app_port            = 8080
-environment         = "prod"
 image_tag           = "latest"
 public_subnets      = ["10.100.0.0/24", "10.100.1.0/24"]
 region              = "us-east-1"

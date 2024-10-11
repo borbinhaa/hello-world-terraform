@@ -46,14 +46,17 @@ variable "image_tag" {
 variable "codestar_connection" {
   type        = string
   description = "AWS CodestarConnection"
+  default = ""
 }
 
 variable "github_repo" {
   type        = string
   description = "Github Repository that codepipeline will look"
+  default = ""
 }
 
 variable "github_branch" {
   type        = string
   description = "Branch that will trigger codepipeline"
+  default = ""
 }

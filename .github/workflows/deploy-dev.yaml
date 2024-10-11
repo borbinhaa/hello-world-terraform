@@ -9,6 +9,7 @@ env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_REGION: ${{ secrets.AWS_REGION }}
+  IMAGE_TAG: ${{ secrets.IMAGE_TAG }}
 
 jobs:
   deploy-terraform:
@@ -29,6 +30,10 @@ jobs:
           aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
+
+      - name: Extract repository name
+        id: extract-repo-name
+        run: echo "REPO_NAME=${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}" >> $GITHUB_ENV
 
       - name: Cache Terraform state
         id: cache-terraform
@@ -58,12 +63,12 @@ jobs:
       - name: Plan
         run: |
           cd infra/app
-          terraform plan --var-file="dev/terraform.tfvars" -var="access_key=${{ env.AWS_ACCESS_KEY_ID }}" -var="secret_key=${{ env.AWS_SECRET_ACCESS_KEY }}" -var="region=${{ env.AWS_REGION }}"
+          terraform plan --var-file="dev/terraform.tfvars" -var="access_key=${{ env.AWS_ACCESS_KEY_ID }}" -var="secret_key=${{ env.AWS_SECRET_ACCESS_KEY }}" -var="region=${{ env.AWS_REGION }}" -var="image_tag=${{  env.IMAGE_TAG  }}" -var="app_name=${{  env.REPO_NAME  }}"
 
       - name: Deploy
         run: |
           cd infra/app
-          terraform apply --var-file="dev/terraform.tfvars" -auto-approve -var="access_key=${{ env.AWS_ACCESS_KEY_ID }}" -var="secret_key=${{ env.AWS_SECRET_ACCESS_KEY }}" -var="region=${{ env.AWS_REGION }}"
+          terraform apply --var-file="dev/terraform.tfvars" -auto-approve -var="access_key=${{ env.AWS_ACCESS_KEY_ID }}" -var="secret_key=${{ env.AWS_SECRET_ACCESS_KEY }}" -var="region=${{ env.AWS_REGION }}" -var="image_tag=${{  env.IMAGE_TAG  }}" -var="app_name=${{  env.REPO_NAME  }}"
 
       - name: Save Terraform state
         if: success()
@@ -90,37 +95,40 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
+      - name: Extract repository name
+        id: extract-repo-name
+        run: echo "REPO_NAME=${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}" >> $GITHUB_ENV
+
       - name: Docker build and push the image to Amazon ECR
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.REPO_NAME }}
-          IMAGE_TAG: ${{ secrets.REPO_TAG }}
+          ECR_REPOSITORY: ${{ env.REPO_NAME }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          echo "docker-image=${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}" >> $GITHUB_OUTPUT
+          IMAGE_URL="${ECR_REGISTRY}/${ECR_REPOSITORY}-dev:${IMAGE_TAG}"
+          echo $IMAGE_URL
+          docker build -t $IMAGE_URL .
+          docker push $IMAGE_URL
+          echo "docker-image=${ECR_REGISTRY}/${ECR_REPOSITORY}-dev:${IMAGE_TAG}" >> $GITHUB_OUTPUT
 
       - name: Download task definition
         run: |
-          aws ecs describe-task-definition --task-definition hello-world-dev-family --query taskDefinition > task-definition.json
+          TASK_DEFINITION="${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}-dev-family"
+          aws ecs describe-task-definition --task-definition $TASK_DEFINITION --query taskDefinition > task-definition.json
 
       - name: Fill in new image ID in task definition
         id: task-def
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.REPO_NAME }}
-          IMAGE_TAG: ${{ secrets.REPO_TAG }}
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: task-definition.json
-          container-name: hello-world-dev-container
+          container-name: "${{ env.REPO_NAME }}-dev-container"
           image: ${{ steps.build-image.outputs.docker-image }}
 
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: hello-world-dev-service
-          cluster: hello-world-dev-cluster
+          service: "${{ env.REPO_NAME }}-dev-service"
+          cluster: "${{ env.REPO_NAME }}-dev-cluster"
           wait-for-service-stability: true
